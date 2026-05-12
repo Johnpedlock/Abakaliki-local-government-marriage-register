@@ -1,3 +1,6 @@
+# Production Ready `server.js`
+
+```js
 require("dotenv").config();
 
 const express = require("express");
@@ -7,20 +10,60 @@ const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 const QRCode = require("qrcode");
 const path = require("path");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const pool = require("./db");
 const transporter = require("./mailer");
 
 const app = express();
 
-app.use(express.json({ limit: "10mb" }));
-app.use(cors());
+// ======================================================
+// TRUST PROXY (RENDER)
+// ======================================================
+app.set("trust proxy", 1);
 
+// ======================================================
+// SECURITY
+// ======================================================
+app.use(helmet());
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
+// ======================================================
+// RATE LIMITER
+// ======================================================
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    message: {
+      success: false,
+      message: "Too many requests. Please try again later."
+    }
+  })
+);
+
+// ======================================================
+// BODY PARSER
+// ======================================================
+app.use(express.json({ limit: "10mb" }));
+
+// ======================================================
+// STATIC ASSETS
+// ======================================================
 app.use(
   "/assets",
   express.static(path.join(__dirname, "assets"))
 );
 
+// ======================================================
+// CONFIG
+// ======================================================
 const PORT = process.env.PORT || 5000;
 const SECRET = process.env.JWT_SECRET;
 
@@ -28,28 +71,37 @@ const SECRET = process.env.JWT_SECRET;
 // GENERATE REFERENCE NUMBER
 // ======================================================
 function generateRef() {
-
   return `ALMR-EBONYI-${new Date().getFullYear()}-${Math.floor(
     100000 + Math.random() * 900000
   )}`;
-
 }
 
 // ======================================================
-// GOVERNMENT LOGO URL
+// GOVERNMENT LOGO
 // ======================================================
-function getLogoUrl(req) {
+function getLogoUrl() {
+  return "cid:governmentlogo";
+}
 
-  return `${req.protocol}://${req.get("host")}/assets/logo.png`;
-
+// ======================================================
+// EMAIL ATTACHMENTS
+// ======================================================
+function emailAttachments() {
+  return [
+    {
+      filename: "logo.png",
+      path: path.join(__dirname, "assets/logo.png"),
+      cid: "governmentlogo"
+    }
+  ];
 }
 
 // ======================================================
 // GOVERNMENT EMAIL HEADER
 // ======================================================
-function emailHeader(req, title) {
+function emailHeader(title) {
 
-  const logoUrl = getLogoUrl(req);
+  const logoUrl = getLogoUrl();
 
   return `
   <div style="
@@ -119,7 +171,6 @@ function emailHeader(req, title) {
 
   </div>
   `;
-
 }
 
 // ======================================================
@@ -164,13 +215,12 @@ function emailFooter() {
 
   </div>
   `;
-
 }
 
 // ======================================================
 // EMAIL TEMPLATE
 // ======================================================
-function emailTemplate(req, title, body) {
+function emailTemplate(title, body) {
 
   return `
   <div style="
@@ -189,7 +239,7 @@ function emailTemplate(req, title, body) {
       box-shadow:0 2px 14px rgba(0,0,0,0.08);
     ">
 
-      ${emailHeader(req, title)}
+      ${emailHeader(title)}
 
       <div style="
         padding:40px;
@@ -208,7 +258,6 @@ function emailTemplate(req, title, body) {
 
   </div>
   `;
-
 }
 
 // ======================================================
@@ -230,7 +279,6 @@ function statusBadge(text, bg, color) {
     ${text}
   </span>
   `;
-
 }
 
 // ======================================================
@@ -263,7 +311,6 @@ function auth(req, res, next) {
     });
 
   }
-
 }
 
 // ======================================================
@@ -274,8 +321,9 @@ app.get("/", (req, res) => {
   res.json({
     success: true,
     system: "Abakaliki Marriage Register",
-    version: "7.0.0",
-    status: "Running"
+    version: "8.0.0",
+    status: "Running",
+    environment: "production"
   });
 
 });
@@ -349,9 +397,6 @@ app.post("/register", async (req, res) => {
       ]
     );
 
-    // ======================================================
-    // USER REGISTRATION EMAIL
-    // ======================================================
     await transporter.sendMail({
 
       from:
@@ -362,8 +407,9 @@ app.post("/register", async (req, res) => {
       subject:
         "Marriage Registration Submitted Successfully",
 
+      attachments: emailAttachments(),
+
       html: emailTemplate(
-        req,
         "Official Registration Notification",
         `
         <h2 style="color:#006400;">
@@ -375,7 +421,7 @@ app.post("/register", async (req, res) => {
         </p>
 
         <p>
-          This is to officially acknowledge receipt of your marriage registration application submitted through the Abakaliki Local Government Marriage Registration Portal.
+          Your marriage registration application has been received successfully.
         </p>
 
         <div style="
@@ -403,108 +449,8 @@ app.post("/register", async (req, res) => {
         </div>
 
         <p>
-          Your application is currently undergoing administrative verification and official review.
+          Kindly keep your reference number safe.
         </p>
-
-        <p>
-          Once approved, another official government notification will be sent containing further instructions regarding certificate processing and appointment scheduling.
-        </p>
-
-        <p>
-          Kindly keep your reference number safe for future verification and correspondence.
-        </p>
-
-        <br/>
-
-        <p>
-          Thank you for using the official Abakaliki Marriage Registration Portal.
-        </p>
-        `
-      )
-
-    });
-
-    // ======================================================
-    // ADMIN REGISTRATION ALERT
-    // ======================================================
-    await transporter.sendMail({
-
-      from:
-        '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
-
-      to: process.env.ADMIN_EMAILS.split(","),
-
-      subject:
-        "New Marriage Registration Submitted",
-
-      html: emailTemplate(
-        req,
-        "Administrative Registration Alert",
-        `
-        <h2 style="color:#006400;">
-          New Marriage Registration Submitted
-        </h2>
-
-        <p>
-          A new marriage registration application has been submitted through the official government portal.
-        </p>
-
-        <div style="
-          background:#f8f8f8;
-          padding:24px;
-          border-left:5px solid #006400;
-          margin:30px 0;
-          border-radius:8px;
-        ">
-
-          <p>
-            <strong>Applicant Name:</strong><br/>
-            ${full_name}
-          </p>
-
-          <p>
-            <strong>Reference Number:</strong><br/>
-            ${ref}
-          </p>
-
-          <p>
-            <strong>Email Address:</strong><br/>
-            ${email}
-          </p>
-
-          <p>
-            <strong>Phone Number:</strong><br/>
-            ${phone || "-"}
-          </p>
-
-          <p>
-            <strong>Occupation:</strong><br/>
-            ${occupation || "-"}
-          </p>
-
-          <p>
-            <strong>Wedding Date:</strong><br/>
-            ${wedding_date || "-"}
-          </p>
-
-        </div>
-
-        <div style="
-          background:#fff8e1;
-          padding:18px;
-          border-radius:8px;
-          border:1px solid #f0d879;
-        ">
-
-          <strong>
-            Administrative Action Required
-          </strong>
-
-          <p style="margin-top:10px;">
-            Kindly login to the Administrative Dashboard to review and process this registration application.
-          </p>
-
-        </div>
         `
       )
 
@@ -582,8 +528,11 @@ app.post("/admin/login", async (req, res) => {
   try {
 
     const adminUser = {
-      username: "admin",
-      password: bcrypt.hashSync("admin123", 10)
+      username: process.env.ADMIN_USERNAME,
+      password: bcrypt.hashSync(
+        process.env.ADMIN_PASSWORD,
+        10
+      )
     };
 
     const { username, password } = req.body;
@@ -660,575 +609,6 @@ app.get(
 );
 
 // ======================================================
-// APPROVE REGISTRATION
-// ======================================================
-app.put(
-  "/admin/verify/:ref",
-  auth,
-  async (req, res) => {
-
-    try {
-
-      const result = await pool.query(
-        `
-        UPDATE registrations
-        SET status='verified'
-        WHERE reference_number=$1
-        RETURNING *
-        `,
-        [req.params.ref]
-      );
-
-      if (!result.rows.length) {
-
-        return res.status(404).json({
-          success: false,
-          message:
-            "Registration not found"
-        });
-
-      }
-
-      const applicant = result.rows[0];
-
-      // ======================================================
-      // APPROVAL EMAIL
-      // ======================================================
-      await transporter.sendMail({
-
-        from:
-          '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
-
-        to: applicant.email,
-
-        subject:
-          "Marriage Registration Approved",
-
-        html: emailTemplate(
-          req,
-          "Registration Approval Notice",
-          `
-          <h2 style="color:#006400;">
-            Registration Approved Successfully
-          </h2>
-
-          <p>
-            Dear ${applicant.full_name},
-          </p>
-
-          <p>
-            We are pleased to inform you that your marriage registration application has been approved successfully.
-          </p>
-
-          <div style="
-            background:#f8f8f8;
-            padding:24px;
-            border-left:5px solid #006400;
-            margin:30px 0;
-            border-radius:8px;
-          ">
-
-            <p>
-              <strong>Reference Number:</strong><br/>
-              ${applicant.reference_number}
-            </p>
-
-            <p style="margin-top:16px;">
-              <strong>Status:</strong><br/>
-              ${statusBadge(
-                "APPROVED",
-                "#d4edda",
-                "#155724"
-              )}
-            </p>
-
-          </div>
-
-          <p>
-            You may now proceed for appointment scheduling and certificate processing.
-          </p>
-          `
-        )
-
-      });
-
-      res.json({
-        success: true,
-        message:
-          "Registration approved successfully"
-      });
-
-    } catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Approval process failed"
-      });
-
-    }
-
-  }
-);
-
-// ======================================================
-// COLLECT CERTIFICATE
-// ======================================================
-app.put(
-  "/admin/collect/:ref",
-  auth,
-  async (req, res) => {
-
-    try {
-
-      await pool.query(
-        `
-        UPDATE registrations
-        SET
-          status='collected',
-          collected_at=NOW()
-        WHERE reference_number=$1
-        `,
-        [req.params.ref]
-      );
-
-      res.json({
-        success: true,
-        message:
-          "Certificate collection recorded"
-      });
-
-    } catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Collection update failed"
-      });
-
-    }
-
-  }
-);
-
-// ======================================================
-// AVAILABLE APPOINTMENT SLOTS
-// ======================================================
-app.get(
-  "/appointments/available",
-  async (req, res) => {
-
-    try {
-
-      const { date } = req.query;
-
-      if (!date) {
-
-        return res.status(400).json({
-          success: false,
-          message: "Date is required"
-        });
-
-      }
-
-      const allSlots = [
-        "09:00 AM",
-        "10:00 AM",
-        "11:00 AM",
-        "12:00 PM",
-        "01:00 PM",
-        "02:00 PM",
-        "03:00 PM"
-      ];
-
-      const result = await pool.query(
-        `
-        SELECT appointment_time
-        FROM appointments
-        WHERE appointment_date=$1
-        `,
-        [date]
-      );
-
-      const booked = result.rows.map(
-        row => row.appointment_time
-      );
-
-      const available = allSlots.filter(
-        slot => !booked.includes(slot)
-      );
-
-      res.json({
-        success: true,
-        date,
-        available_slots: available
-      });
-
-    } catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Failed to fetch appointment slots"
-      });
-
-    }
-
-  }
-);
-
-// ======================================================
-// BOOK APPOINTMENT
-// ======================================================
-app.post("/appointments", async (req, res) => {
-
-  try {
-
-    const {
-      full_name,
-      email,
-      phone,
-      appointment_date,
-      appointment_time,
-      registration_ref
-    } = req.body;
-
-    if (
-      !full_name ||
-      !email ||
-      !appointment_date ||
-      !appointment_time
-    ) {
-
-      return res.status(400).json({
-        success: false,
-        message:
-          "Required appointment fields are missing"
-      });
-
-    }
-
-    // ======================================================
-    // VERIFY REGISTRATION REFERENCE
-    // ======================================================
-    if (registration_ref) {
-
-      const registrationCheck = await pool.query(
-        `
-        SELECT *
-        FROM registrations
-        WHERE reference_number=$1
-        `,
-        [registration_ref]
-      );
-
-      if (!registrationCheck.rows.length) {
-
-        return res.status(400).json({
-          success: false,
-          message:
-            "Invalid registration reference number"
-        });
-
-      }
-
-    }
-
-    // ======================================================
-    // SLOT VALIDATION
-    // ======================================================
-    const existing = await pool.query(
-      `
-      SELECT *
-      FROM appointments
-      WHERE appointment_date=$1
-      AND appointment_time=$2
-      `,
-      [appointment_date, appointment_time]
-    );
-
-    if (existing.rows.length > 0) {
-
-      return res.status(400).json({
-        success: false,
-        message:
-          "This appointment slot is already booked"
-      });
-
-    }
-
-    const ref = generateRef();
-
-    // ======================================================
-    // SAVE APPOINTMENT
-    // ======================================================
-    await pool.query(
-      `
-      INSERT INTO appointments
-      (
-        id,
-        reference_number,
-        full_name,
-        email,
-        phone,
-        appointment_date,
-        appointment_time,
-        registration_ref,
-        status
-      )
-      VALUES
-      (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9
-      )
-      `,
-      [
-        uuidv4(),
-        ref,
-        full_name,
-        email,
-        phone || null,
-        appointment_date,
-        appointment_time,
-        registration_ref || null,
-        "pending"
-      ]
-    );
-
-    const verifyUrl =
-      `${req.protocol}://${req.get("host")}/verify/${ref}`;
-
-    const qr = await QRCode.toDataURL(verifyUrl);
-
-    // ======================================================
-    // USER APPOINTMENT EMAIL
-    // ======================================================
-    await transporter.sendMail({
-
-      from:
-        '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
-
-      to: email,
-
-      subject:
-        "Appointment Booking Confirmation",
-
-      html: emailTemplate(
-        req,
-        "Official Appointment Confirmation",
-        `
-        <h2 style="color:#006400;">
-          Appointment Scheduled Successfully
-        </h2>
-
-        <p>
-          Dear ${full_name},
-        </p>
-
-        <p>
-          Your appointment has been scheduled successfully with the Abakaliki Local Government Marriage Registration Department.
-        </p>
-
-        <div style="
-          background:#f8f8f8;
-          padding:24px;
-          border-left:5px solid #006400;
-          margin:30px 0;
-          border-radius:8px;
-        ">
-
-          <p>
-            <strong>Appointment Reference:</strong><br/>
-            ${ref}
-          </p>
-
-          <p>
-            <strong>Appointment Date:</strong><br/>
-            ${appointment_date}
-          </p>
-
-          <p>
-            <strong>Appointment Time:</strong><br/>
-            ${appointment_time}
-          </p>
-
-          <p style="margin-top:16px;">
-            <strong>Status:</strong><br/>
-            ${statusBadge(
-              "BOOKED",
-              "#d4edda",
-              "#155724"
-            )}
-          </p>
-
-        </div>
-
-        <div style="
-          text-align:center;
-          margin:35px 0;
-          padding:25px;
-          background:#fafafa;
-          border:1px solid #ddd;
-          border-radius:10px;
-        ">
-
-          <p style="
-            font-weight:bold;
-            margin-bottom:20px;
-          ">
-            Official Verification QR Code
-          </p>
-
-          <img src="${qr}" width="220" />
-
-        </div>
-
-        <p>
-          Kindly arrive with your QR code, reference number and supporting documents.
-        </p>
-
-        <p>
-          Please arrive at least 15 minutes before your appointment time.
-        </p>
-        `
-      )
-
-    });
-
-    // ======================================================
-    // ADMIN APPOINTMENT ALERT
-    // ======================================================
-    await transporter.sendMail({
-
-      from:
-        '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
-
-      to: process.env.ADMIN_EMAILS.split(","),
-
-      subject:
-        "New Appointment Booking",
-
-      html: emailTemplate(
-        req,
-        "Administrative Appointment Alert",
-        `
-        <h2 style="color:#006400;">
-          New Appointment Booking
-        </h2>
-
-        <p>
-          A new appointment has been scheduled through the official government portal.
-        </p>
-
-        <div style="
-          background:#f8f8f8;
-          padding:24px;
-          border-left:5px solid #006400;
-          margin:30px 0;
-          border-radius:8px;
-        ">
-
-          <p>
-            <strong>Applicant Name:</strong><br/>
-            ${full_name}
-          </p>
-
-          <p>
-            <strong>Appointment Reference:</strong><br/>
-            ${ref}
-          </p>
-
-          <p>
-            <strong>Email Address:</strong><br/>
-            ${email}
-          </p>
-
-          <p>
-            <strong>Phone Number:</strong><br/>
-            ${phone || "-"}
-          </p>
-
-          <p>
-            <strong>Appointment Date:</strong><br/>
-            ${appointment_date}
-          </p>
-
-          <p>
-            <strong>Appointment Time:</strong><br/>
-            ${appointment_time}
-          </p>
-
-        </div>
-        `
-      )
-
-    });
-
-    res.json({
-      success: true,
-      message:
-        "Appointment booked successfully",
-      reference_number: ref,
-      verification_url: verifyUrl,
-      qr_code: qr,
-      status: "pending"
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message:
-        "Appointment booking failed"
-    });
-
-  }
-
-});
-
-// ======================================================
-// ADMIN APPOINTMENTS
-// ======================================================
-app.get(
-  "/admin/appointments",
-  auth,
-  async (req, res) => {
-
-    try {
-
-      const result = await pool.query(
-        `
-        SELECT *
-        FROM appointments
-        ORDER BY appointment_date ASC
-        `
-      );
-
-      res.json(result.rows);
-
-    } catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Failed to fetch appointments"
-      });
-
-    }
-
-  }
-);
-
-// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
@@ -1260,67 +640,14 @@ app.get("/qr/:ref", async (req, res) => {
 });
 
 // ======================================================
-// VERIFY QR
-// ======================================================
-app.put(
-  "/appointments/verify/:ref",
-  auth,
-  async (req, res) => {
-
-    try {
-
-      const result = await pool.query(
-        `
-        UPDATE appointments
-        SET
-          qr_verified=true,
-          verified_at=NOW(),
-          status='completed'
-        WHERE reference_number=$1
-        RETURNING *
-        `,
-        [req.params.ref]
-      );
-
-      if (!result.rows.length) {
-
-        return res.status(404).json({
-          success: false,
-          message:
-            "Appointment not found"
-        });
-
-      }
-
-      res.json({
-        success: true,
-        message:
-          "QR verified successfully",
-        appointment: result.rows[0]
-      });
-
-    } catch (err) {
-
-      console.error(err);
-
-      res.status(500).json({
-        success: false,
-        message:
-          "QR verification failed"
-      });
-
-    }
-
-  }
-);
-
-// ======================================================
-// START SERVER
+// SERVER
 // ======================================================
 app.listen(PORT, () => {
 
   console.log(
-    `Server running on http://localhost:${PORT}`
+    `Abakaliki Marriage Backend running on port ${PORT}`
   );
 
 });
+
+
