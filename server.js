@@ -1,6 +1,4 @@
-# Production Ready `server.js`
 
-```js
 require("dotenv").config();
 
 const express = require("express");
