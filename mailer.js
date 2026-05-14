@@ -1,40 +1,60 @@
 require("dotenv").config();
 
-const nodemailer = require("nodemailer");
+const axios = require("axios");
 
-const transporter = nodemailer.createTransport({
+async function sendMail(options) {
 
-  host: process.env.SMTP_HOST,
+  try {
 
-  port: Number(process.env.SMTP_PORT),
+    const response = await axios.post(
 
-  secure: true,
+      "https://api.brevo.com/v3/smtp/email",
 
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  },
+      {
+        sender: {
+          name: "Abakaliki Marriage Register",
+          email: "marriageregistryabakalikilocal@gmail.com"
+        },
 
-  connectionTimeout: 30000,
+        to: [
+          {
+            email: options.to
+          }
+        ],
 
-  greetingTimeout: 30000,
+        subject: options.subject,
 
-  socketTimeout: 30000
+        htmlContent: options.html
 
-});
+      },
 
-transporter.verify((error, success) => {
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
 
-  if (error) {
+    );
 
-    console.log("EMAIL ERROR:", error);
+    console.log("EMAIL SENT SUCCESSFULLY");
 
-  } else {
+    return response.data;
 
-    console.log("SMTP SERVER READY");
+  } catch (error) {
+
+    console.log("EMAIL ERROR:");
+
+    console.log(
+      error.response?.data || error.message
+    );
+
+    throw error;
 
   }
 
-});
+}
 
-module.exports = transporter;
+module.exports = {
+  sendMail
+};
