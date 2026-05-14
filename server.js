@@ -539,8 +539,6 @@ app.post("/register", async (req, res) => {
         subject:
           `New Marriage Registration - ${ref}`,
 
-        attachments: emailAttachments(),
-
         html: emailTemplate(
           "New Marriage Registration Alert",
           `
