@@ -69,193 +69,171 @@ const SECRET = process.env.JWT_SECRET;
 // GENERATE REFERENCE NUMBER
 // ======================================================
 function generateRef() {
+
   return `ALMR-EBONYI-${new Date().getFullYear()}-${Math.floor(
     100000 + Math.random() * 900000
   )}`;
+
 }
 
 // ======================================================
-// GOVERNMENT LOGO
-// ======================================================
-function getLogoUrl() {
-  return "cid:governmentlogo";
-}
-
-// ======================================================
-// EMAIL ATTACHMENTS
-// ======================================================
-function emailAttachments() {
-  return [
-    {
-      filename: "logo.png",
-      path: path.join(__dirname, "assets/logo.png"),
-      cid: "governmentlogo"
-    }
-  ];
-}
-
-// ======================================================
-// GOVERNMENT EMAIL HEADER
-// ======================================================
-function emailHeader(title) {
-
-  const logoUrl = getLogoUrl();
-
-  return `
-  <div style="
-    background:#006400;
-    color:white;
-    padding:28px;
-  ">
-
-    <table width="100%" cellspacing="0" cellpadding="0">
-
-      <tr>
-
-        <td width="95" valign="middle">
-
-          <img
-            src="${logoUrl}"
-            width="72"
-            style="
-              background:white;
-              padding:6px;
-              border-radius:10px;
-              display:block;
-            "
-          />
-
-        </td>
-
-        <td valign="middle">
-
-          <h1 style="
-            margin:0;
-            font-size:30px;
-            font-weight:bold;
-            letter-spacing:0.5px;
-          ">
-            Abakaliki Local Government
-          </h1>
-
-          <p style="
-            margin-top:8px;
-            font-size:16px;
-          ">
-            Marriage Registration Department
-          </p>
-
-          <p style="
-            margin-top:6px;
-            font-size:13px;
-            opacity:0.92;
-          ">
-            Official Government Communication
-          </p>
-
-          <p style="
-            margin-top:8px;
-            font-size:15px;
-            font-weight:bold;
-          ">
-            ${title}
-          </p>
-
-        </td>
-
-      </tr>
-
-    </table>
-
-  </div>
-  `;
-}
-
-// ======================================================
-// GOVERNMENT EMAIL FOOTER
-// ======================================================
-function emailFooter() {
-
-  return `
-  <div style="
-    background:#f1f1f1;
-    padding:28px;
-    border-top:1px solid #ddd;
-    color:#555;
-    font-size:13px;
-  ">
-
-    <table width="100%">
-
-      <tr>
-
-        <td>
-
-          <strong>
-            Abakaliki Local Government
-          </strong><br/>
-
-          Marriage Registration Department<br/>
-
-          Ebonyi State, Nigeria
-
-        </td>
-
-        <td align="right">
-
-          Official Government Notice
-
-        </td>
-
-      </tr>
-
-    </table>
-
-  </div>
-  `;
-}
-
-// ======================================================
-// EMAIL TEMPLATE
+// RESPONSIVE EMAIL TEMPLATE
 // ======================================================
 function emailTemplate(title, body) {
 
   return `
-  <div style="
-    font-family:Arial,sans-serif;
+  <!DOCTYPE html>
+  <html>
+
+  <head>
+
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>${title}</title>
+
+  </head>
+
+  <body style="
+    margin:0;
+    padding:0;
     background:#eef2f1;
-    padding:40px;
+    font-family:Arial,sans-serif;
   ">
 
-    <div style="
-      max-width:780px;
-      margin:auto;
-      background:white;
-      border-radius:14px;
-      overflow:hidden;
-      border:1px solid #d7d7d7;
-      box-shadow:0 2px 14px rgba(0,0,0,0.08);
-    ">
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="
+        padding:20px;
+        background:#eef2f1;
+      "
+    >
 
-      ${emailHeader(title)}
+      <tr>
 
-      <div style="
-        padding:40px;
-        line-height:1.9;
-        color:#222;
-        font-size:15px;
-      ">
+        <td align="center">
 
-        ${body}
+          <table
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              max-width:650px;
+              background:white;
+              border-radius:18px;
+              overflow:hidden;
+              box-shadow:0 4px 20px rgba(0,0,0,0.08);
+            "
+          >
 
-      </div>
+            <!-- HEADER -->
+            <tr>
 
-      ${emailFooter()}
+              <td
+                style="
+                  background:#006400;
+                  padding:35px 20px;
+                  text-align:center;
+                "
+              >
 
-    </div>
+                <img
+                  src="https://abakaliki-marriage-backend.onrender.com/assets/logo.png"
+                  alt="Government Logo"
+                  width="95"
+                  style="
+                    display:block;
+                    margin:auto;
+                    background:white;
+                    padding:10px;
+                    border-radius:14px;
+                  "
+                />
 
-  </div>
+                <h1 style="
+                  color:white;
+                  margin-top:22px;
+                  margin-bottom:8px;
+                  font-size:28px;
+                  line-height:1.4;
+                ">
+                  Abakaliki Local Government
+                </h1>
+
+                <p style="
+                  color:white;
+                  font-size:15px;
+                  margin:0;
+                ">
+                  Marriage Registration Department
+                </p>
+
+              </td>
+
+            </tr>
+
+            <!-- BODY -->
+            <tr>
+
+              <td style="
+                padding:35px 28px;
+                color:#222;
+                font-size:15px;
+                line-height:1.9;
+              ">
+
+                ${body}
+
+              </td>
+
+            </tr>
+
+            <!-- FOOTER -->
+            <tr>
+
+              <td style="
+                background:#f5f5f5;
+                padding:24px;
+                text-align:center;
+                font-size:13px;
+                color:#666;
+              ">
+
+                <strong>
+                  Abakaliki Local Government
+                </strong>
+
+                <br/>
+
+                Ebonyi State, Nigeria
+
+                <br/><br/>
+
+                Official Government Communication
+
+              </td>
+
+            </tr>
+
+          </table>
+
+        </td>
+
+      </tr>
+
+    </table>
+
+  </body>
+
+  </html>
   `;
+
 }
 
 // ======================================================
@@ -267,20 +245,20 @@ function statusBadge(text, bg, color) {
   <span style="
     background:${bg};
     color:${color};
-    padding:8px 16px;
+    padding:10px 18px;
     border-radius:22px;
-    font-size:12px;
+    font-size:13px;
     font-weight:bold;
-    letter-spacing:0.6px;
     display:inline-block;
   ">
     ${text}
   </span>
   `;
+
 }
 
 // ======================================================
-// ADMIN AUTH
+// ADMIN AUTH MIDDLEWARE
 // ======================================================
 function auth(req, res, next) {
 
@@ -309,6 +287,7 @@ function auth(req, res, next) {
     });
 
   }
+
 }
 
 // ======================================================
@@ -319,10 +298,40 @@ app.get("/", (req, res) => {
   res.json({
     success: true,
     system: "Abakaliki Marriage Register",
-    version: "8.0.0",
+    version: "9.0.0",
     status: "Running",
     environment: "production"
   });
+
+});
+
+// ======================================================
+// HEALTH CHECK
+// ======================================================
+app.get("/health", async (req, res) => {
+
+  try {
+
+    await pool.query("SELECT NOW()");
+
+    res.json({
+      success: true,
+      server: "online",
+      database: "connected",
+      email_service: "brevo-api",
+      uptime: process.uptime()
+    });
+
+  } catch (err) {
+
+    console.error("SERVER ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+
+  }
 
 });
 
@@ -345,6 +354,9 @@ app.post("/register", async (req, res) => {
       wedding_date
     } = req.body;
 
+    // ======================================================
+    // VALIDATION
+    // ======================================================
     if (!full_name || !age || !email) {
 
       return res.status(400).json({
@@ -355,8 +367,14 @@ app.post("/register", async (req, res) => {
 
     }
 
+    // ======================================================
+    // GENERATE REFERENCE
+    // ======================================================
     const ref = generateRef();
 
+    // ======================================================
+    // SAVE TO DATABASE
+    // ======================================================
     await pool.query(
       `
       INSERT INTO registrations
@@ -395,65 +413,102 @@ app.post("/register", async (req, res) => {
       ]
     );
 
-    await transporter.sendMail({
+    // ======================================================
+    // SEND EMAIL
+    // ======================================================
+    try {
 
-      from:
-        '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
+      await transporter.sendMail({
 
-      to: email,
+        to: email,
 
-      subject:
-        "Marriage Registration Submitted Successfully",
+        subject:
+          "Marriage Registration Submitted Successfully",
 
-      attachments: emailAttachments(),
-
-      html: emailTemplate(
-        "Official Registration Notification",
-        `
-        <h2 style="color:#006400;">
-          Marriage Registration Submitted Successfully
-        </h2>
-
-        <p>
-          Dear ${full_name},
-        </p>
-
-        <p>
-          Your marriage registration application has been received successfully.
-        </p>
-
-        <div style="
-          background:#f8f8f8;
-          padding:24px;
-          border-left:5px solid #006400;
-          margin:30px 0;
-          border-radius:8px;
-        ">
+        html: emailTemplate(
+          "Marriage Registration Submitted",
+          `
+          <h2 style="
+            color:#006400;
+            margin-top:0;
+            font-size:26px;
+          ">
+            Registration Submitted Successfully
+          </h2>
 
           <p>
-            <strong>Reference Number:</strong><br/>
-            ${ref}
+            Dear <strong>${full_name}</strong>,
           </p>
 
-          <p style="margin-top:16px;">
-            <strong>Application Status:</strong><br/>
+          <p>
+            Your marriage registration application has been received successfully by the Abakaliki Local Government Marriage Registration Department.
+          </p>
+
+          <div style="
+            background:#f8f8f8;
+            border-left:5px solid #006400;
+            padding:22px;
+            border-radius:12px;
+            margin:30px 0;
+          ">
+
+            <p style="
+              margin:0;
+              color:#555;
+              font-size:14px;
+            ">
+              Reference Number
+            </p>
+
+            <h2 style="
+              color:#006400;
+              margin-top:12px;
+              margin-bottom:0;
+              word-break:break-word;
+              font-size:24px;
+            ">
+              ${ref}
+            </h2>
+
+          </div>
+
+          <p>
+            Your application status is currently:
+          </p>
+
+          <div style="margin-top:12px;">
             ${statusBadge(
               "PENDING REVIEW",
               "#fff3cd",
               "#856404"
             )}
+          </div>
+
+          <br/>
+
+          <p>
+            Please keep your reference number safe for verification and appointment scheduling.
           </p>
 
-        </div>
+          <p>
+            Thank you for using the official marriage registration portal.
+          </p>
+          `
+        )
 
-        <p>
-          Kindly keep your reference number safe.
-        </p>
-        `
-      )
+      });
 
-    });
+      console.log("EMAIL SENT SUCCESSFULLY");
 
+    } catch (mailError) {
+
+      console.error("EMAIL ERROR:", mailError);
+
+    }
+
+    // ======================================================
+    // SUCCESS RESPONSE
+    // ======================================================
     res.json({
       success: true,
       message:
@@ -464,7 +519,7 @@ app.post("/register", async (req, res) => {
 
   } catch (err) {
 
-    console.error(err);
+    console.error("SERVER ERROR:", err);
 
     res.status(500).json({
       success: false,
@@ -507,7 +562,7 @@ app.get("/verify/:ref", async (req, res) => {
 
   } catch (err) {
 
-    console.error(err);
+    console.error("SERVER ERROR:", err);
 
     res.status(500).json({
       success: false,
@@ -560,7 +615,7 @@ app.post("/admin/login", async (req, res) => {
 
   } catch (err) {
 
-    console.error(err);
+    console.error("SERVER ERROR:", err);
 
     res.status(500).json({
       success: false,
@@ -593,7 +648,7 @@ app.get(
 
     } catch (err) {
 
-      console.error(err);
+      console.error("SERVER ERROR:", err);
 
       res.status(500).json({
         success: false,
@@ -625,7 +680,7 @@ app.get("/qr/:ref", async (req, res) => {
 
   } catch (err) {
 
-    console.error(err);
+    console.error("SERVER ERROR:", err);
 
     res.status(500).json({
       success: false,
@@ -647,5 +702,4 @@ app.listen(PORT, () => {
   );
 
 });
-
 
