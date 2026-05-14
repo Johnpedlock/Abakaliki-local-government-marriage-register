@@ -314,84 +314,16 @@ app.get("/health", async (req, res) => {
 
     await pool.query("SELECT NOW()");
 
+    res.json({
+      success: true,
+      server: "online",
+      database: "connected",
+      email_service: "brevo-api",
+      uptime: process.uptime()
+    });
 
-    // ======================================================
-    // ADMIN NOTIFICATION EMAILS
-    // ======================================================
-    try {
 
-      await transporter.sendMail({
 
-        from:
-          '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
-
-        to: [
-          "marriageregistryabakalikilocal@gmail.com",
-          "marriageregistrarabakalikilga@gmail.com"
-        ],
-
-        subject:
-          `New Marriage Registration - ${ref}`,
-
-        attachments: emailAttachments(),
-
-        html: emailTemplate(
-          "New Marriage Registration Alert",
-          `
-          <h2 style="color:#006400;">
-            New Marriage Registration Submitted
-          </h2>
-
-          <p>
-            A new marriage registration application has been submitted through the official portal.
-          </p>
-
-          <div style="
-            background:#f8f8f8;
-            border-left:5px solid #006400;
-            padding:24px;
-            margin:30px 0;
-            border-radius:10px;
-          ">
-
-            <p><strong>Reference Number:</strong><br/>${ref}</p>
-
-            <p><strong>Full Name:</strong><br/>${full_name}</p>
-
-            <p><strong>Age:</strong><br/>${age}</p>
-
-            <p><strong>Occupation:</strong><br/>${occupation || "N/A"}</p>
-
-            <p><strong>Address:</strong><br/>${address || "N/A"}</p>
-
-            <p><strong>Phone:</strong><br/>${phone || "N/A"}</p>
-
-            <p><strong>Email:</strong><br/>${email}</p>
-
-            <p><strong>Marital Status:</strong><br/>${condition || "N/A"}</p>
-
-            <p><strong>Consent Name:</strong><br/>${consent_name || "N/A"}</p>
-
-            <p><strong>Wedding Date:</strong><br/>${wedding_date || "N/A"}</p>
-
-          </div>
-          `
-        )
-
-      });
-
-      console.log(
-        "ADMIN NOTIFICATION SENT SUCCESSFULLY"
-      );
-
-    } catch (adminMailError) {
-
-      console.error(
-        "ADMIN EMAIL ERROR:",
-        adminMailError
-      );
-
-    }
 
 
     res.json({
@@ -583,6 +515,87 @@ app.post("/register", async (req, res) => {
     } catch (mailError) {
 
       console.error("EMAIL ERROR:", mailError);
+
+    }
+
+    // ======================================================
+    // SUCCESS RESPONSE
+    // ======================================================
+    // ======================================================
+    // ADMIN NOTIFICATION EMAILS
+    // ======================================================
+    try {
+
+      await transporter.sendMail({
+
+        from:
+          '"Abakaliki Marriage Register" <marriageregistryabakalikilocal@gmail.com>',
+
+        to: [
+          "marriageregistryabakalikilocal@gmail.com",
+          "marriageregistrarabakalikilga@gmail.com"
+        ],
+
+        subject:
+          `New Marriage Registration - ${ref}`,
+
+        attachments: emailAttachments(),
+
+        html: emailTemplate(
+          "New Marriage Registration Alert",
+          `
+          <h2 style="color:#006400;">
+            New Marriage Registration Submitted
+          </h2>
+
+          <p>
+            A new marriage registration application has been submitted through the official portal.
+          </p>
+
+          <div style="
+            background:#f8f8f8;
+            border-left:5px solid #006400;
+            padding:24px;
+            margin:30px 0;
+            border-radius:10px;
+          ">
+
+            <p><strong>Reference Number:</strong><br/>${ref}</p>
+
+            <p><strong>Full Name:</strong><br/>${full_name}</p>
+
+            <p><strong>Age:</strong><br/>${age}</p>
+
+            <p><strong>Occupation:</strong><br/>${occupation || "N/A"}</p>
+
+            <p><strong>Address:</strong><br/>${address || "N/A"}</p>
+
+            <p><strong>Phone:</strong><br/>${phone || "N/A"}</p>
+
+            <p><strong>Email:</strong><br/>${email}</p>
+
+            <p><strong>Marital Status:</strong><br/>${condition || "N/A"}</p>
+
+            <p><strong>Consent Name:</strong><br/>${consent_name || "N/A"}</p>
+
+            <p><strong>Wedding Date:</strong><br/>${wedding_date || "N/A"}</p>
+
+          </div>
+          `
+        )
+
+      });
+
+      console.log(
+        "ADMIN NOTIFICATION SENT SUCCESSFULLY"
+      );
+
+    } catch (adminMailError) {
+
+      console.error(
+        "ADMIN EMAIL ERROR:",
+        adminMailError
+      );
 
     }
 
