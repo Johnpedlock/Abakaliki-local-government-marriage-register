@@ -37,6 +37,14 @@ async function sendMail(options) {
 
     console.log("EMAIL SENT SUCCESSFULLY");
 
+    console.log("DELIVERY RESPONSE:");
+
+    console.log(JSON.stringify(response.data, null, 2));
+
+    console.log("RECIPIENTS:");
+
+    console.log(options.to);
+
     return response.data;
 
   } catch (error) {
