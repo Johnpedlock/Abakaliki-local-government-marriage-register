@@ -16,11 +16,9 @@ async function sendMail(options) {
           email: "marriageregistryabakalikilocal@gmail.com"
         },
 
-        to: [
-          {
-            email: options.to
-          }
-        ],
+        to: Array.isArray(options.to)
+          ? options.to.map(email => ({ email }))
+          : [{ email: options.to }],
 
         subject: options.subject,
 
