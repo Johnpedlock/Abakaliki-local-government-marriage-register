@@ -788,6 +788,71 @@ app.get(
 
 
 // ======================================================
+// APPROVE APPOINTMENT
+// ======================================================
+app.put(
+  "/admin/appointment/:ref/approve",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const result = await pool.query(
+        `
+        UPDATE appointments
+        SET status='approved'
+        WHERE reference_number=$1
+        RETURNING *
+        `,
+        [req.params.ref]
+      );
+
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          success: false,
+          message:
+            "Appointment not found"
+        });
+
+      }
+
+      const appointment =
+        result.rows[0];
+
+      console.log(
+        "APPOINTMENT APPROVED:",
+        appointment.reference_number
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Appointment approved successfully",
+        appointment
+      });
+
+    } catch (err) {
+
+      console.error(
+        "APPROVE APPOINTMENT ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to approve appointment"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
