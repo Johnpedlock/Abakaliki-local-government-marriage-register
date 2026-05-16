@@ -745,6 +745,49 @@ app.get(
 );
 
 // ======================================================
+// ADMIN APPOINTMENTS
+// ======================================================
+app.get(
+  "/admin/appointments",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const result = await pool.query(
+        `
+        SELECT *
+        FROM appointments
+        ORDER BY created_at DESC
+        `
+      );
+
+      res.json({
+        success: true,
+        appointments: result.rows
+      });
+
+    } catch (err) {
+
+      console.error(
+        "ADMIN APPOINTMENTS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to fetch appointments"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
