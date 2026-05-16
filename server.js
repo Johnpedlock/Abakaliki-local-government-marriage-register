@@ -1018,6 +1018,83 @@ app.post("/appointment/create", auth, async (req, res) => {
 
 
 // ======================================================
+// VERIFY APPOINTMENT
+// ======================================================
+app.get("/appointment/verify/:ref", async (req, res) => {
+
+  try {
+
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM appointments
+      WHERE reference_number=$1
+      `,
+      [req.params.ref]
+    );
+
+    if (!result.rows.length) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found"
+      });
+
+    }
+
+    const appointment = result.rows[0];
+
+    // ==========================================
+    // MARK QR AS VERIFIED
+    // ==========================================
+    await pool.query(
+      `
+      UPDATE appointments
+      SET
+        qr_verified=true,
+        verified_at=NOW()
+      WHERE reference_number=$1
+      `,
+      [req.params.ref]
+    );
+
+    res.json({
+      success: true,
+      appointment: {
+        reference_number:
+          appointment.reference_number,
+        full_name:
+          appointment.full_name,
+        appointment_date:
+          appointment.appointment_date,
+        appointment_time:
+          appointment.appointment_time,
+        status:
+          appointment.status,
+        qr_verified: true
+      }
+    });
+
+  } catch (err) {
+
+    console.error(
+      "APPOINTMENT VERIFY ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
+      message:
+        "Appointment verification failed"
+    });
+
+  }
+
+});
+
+
+
+// ======================================================
 // SERVER
 // ======================================================
 app.listen(PORT, () => {
