@@ -671,19 +671,11 @@ app.post("/admin/login", async (req, res) => {
 
   try {
 
-    const adminUser = {
-      username: process.env.ADMIN_USERNAME,
-      password: bcrypt.hashSync(
-        process.env.ADMIN_PASSWORD,
-        10
-      )
-    };
-
     const { username, password } = req.body;
 
     if (
-      username !== adminUser.username ||
-      !bcrypt.compareSync(password, adminUser.password)
+      username !== process.env.ADMIN_USERNAME ||
+      password !== process.env.ADMIN_PASSWORD
     ) {
 
       return res.status(401).json({
