@@ -784,6 +784,248 @@ app.get("/qr/:ref", async (req, res) => {
 });
 
 // ======================================================
+// CREATE APPOINTMENT
+// ======================================================
+app.post("/appointment/create", auth, async (req, res) => {
+
+  try {
+
+    const {
+      registration_ref,
+      appointment_date,
+      appointment_time
+    } = req.body;
+
+    // ==========================================
+    // VALIDATE REGISTRATION
+    // ==========================================
+    const registration = await pool.query(
+      `
+      SELECT *
+      FROM registrations
+      WHERE reference_number=$1
+      `,
+      [registration_ref]
+    );
+
+    if (!registration.rows.length) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Registration not found"
+      });
+
+    }
+
+    const applicant = registration.rows[0];
+
+    // ==========================================
+    // GENERATE APPOINTMENT REFERENCE
+    // ==========================================
+    const appointmentRef =
+      `APT-${Date.now()}`;
+
+    // ==========================================
+    // INSERT APPOINTMENT
+    // ==========================================
+    await pool.query(
+      `
+      INSERT INTO appointments
+      (
+        id,
+        reference_number,
+        full_name,
+        email,
+        phone,
+        appointment_date,
+        appointment_time,
+        registration_ref,
+        status
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9
+      )
+      `,
+      [
+        uuidv4(),
+        appointmentRef,
+        applicant.full_name,
+        applicant.email,
+        applicant.phone,
+        appointment_date,
+        appointment_time,
+        registration_ref,
+        "scheduled"
+      ]
+    );
+
+    // ==========================================
+    // GENERATE QR
+    // ==========================================
+    const qrUrl =
+      `${req.protocol}://${req.get("host")}/verify/${registration_ref}`;
+
+    const qr =
+      await QRCode.toDataURL(qrUrl);
+
+    // ==========================================
+    // APPLICANT EMAIL
+    // ==========================================
+    await transporter.sendMail({
+
+      to: applicant.email,
+
+      subject:
+        "Marriage Appointment Scheduled",
+
+      html: emailTemplate(
+        "Marriage Appointment Scheduled",
+        `
+        <h2 style="color:#006400;">
+          Appointment Scheduled Successfully
+        </h2>
+
+        <p>
+          Dear <strong>${applicant.full_name}</strong>,
+        </p>
+
+        <p>
+          Your marriage appointment has been scheduled successfully.
+        </p>
+
+        <div style="
+          background:#f8f8f8;
+          border-left:5px solid #006400;
+          padding:24px;
+          border-radius:12px;
+          margin:30px 0;
+        ">
+
+          <p>
+            <strong>Appointment Reference:</strong><br/>
+            ${appointmentRef}
+          </p>
+
+          <p>
+            <strong>Date:</strong><br/>
+            ${appointment_date}
+          </p>
+
+          <p>
+            <strong>Time:</strong><br/>
+            ${appointment_time}
+          </p>
+
+        </div>
+
+        <p>
+          Kindly arrive early for verification.
+        </p>
+
+        <img
+          src="${qr}"
+          width="180"
+          style="
+            margin-top:20px;
+            border:1px solid #ddd;
+            padding:10px;
+            border-radius:10px;
+          "
+        />
+        `
+      )
+
+    });
+
+    // ==========================================
+    // ADMIN NOTIFICATION
+    // ==========================================
+    await transporter.sendMail({
+
+      to: [
+        "marriageregistryabakalikilocal@gmail.com",
+        "marriageregistrarabakalikilga@gmail.com"
+      ],
+
+      subject:
+        `New Appointment Scheduled - ${appointmentRef}`,
+
+      html: emailTemplate(
+        "Appointment Scheduled",
+        `
+        <h2 style="color:#006400;">
+          New Appointment Scheduled
+        </h2>
+
+        <p>
+          A marriage appointment has been scheduled.
+        </p>
+
+        <div style="
+          background:#f8f8f8;
+          border-left:5px solid #006400;
+          padding:24px;
+          border-radius:12px;
+          margin:30px 0;
+        ">
+
+          <p>
+            <strong>Applicant:</strong><br/>
+            ${applicant.full_name}
+          </p>
+
+          <p>
+            <strong>Appointment Reference:</strong><br/>
+            ${appointmentRef}
+          </p>
+
+          <p>
+            <strong>Date:</strong><br/>
+            ${appointment_date}
+          </p>
+
+          <p>
+            <strong>Time:</strong><br/>
+            ${appointment_time}
+          </p>
+
+        </div>
+        `
+      )
+
+    });
+
+    console.log(
+      "APPOINTMENT CREATED SUCCESSFULLY"
+    );
+
+    res.json({
+      success: true,
+      appointment_reference: appointmentRef,
+      qr
+    });
+
+  } catch (err) {
+
+    console.error(
+      "APPOINTMENT ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
+      message:
+        "Appointment creation failed"
+    });
+
+  }
+
+});
+
+
+
+// ======================================================
 // SERVER
 // ======================================================
 app.listen(PORT, () => {
