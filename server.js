@@ -366,6 +366,62 @@ app.post("/register", async (req, res) => {
       wedding_date
     } = req.body;
 
+    // ==========================================
+    // INPUT VALIDATION
+    // ==========================================
+
+    if (
+      !full_name ||
+      !age ||
+      !phone ||
+      !email ||
+      !wedding_date
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Required fields are missing"
+      });
+
+    }
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid email address"
+      });
+
+    }
+
+    const phoneRegex =
+      /^[0-9]{11}$/;
+
+    if (!phoneRegex.test(phone)) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid phone number"
+      });
+
+    }
+
+    if (Number(age) < 18) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Applicant must be at least 18 years old"
+      });
+
+    }
+
     // ======================================================
     // VALIDATION
     // ======================================================
