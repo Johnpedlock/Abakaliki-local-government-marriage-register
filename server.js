@@ -422,6 +422,31 @@ app.post("/register", async (req, res) => {
 
     }
 
+    // ==========================================
+    // DUPLICATE REGISTRATION CHECK
+    // ==========================================
+
+    const existingRegistration =
+      await pool.query(
+        `
+        SELECT *
+        FROM registrations
+        WHERE email=$1
+        OR phone=$2
+        `,
+        [email, phone]
+      );
+
+    if (existingRegistration.rows.length) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "A registration already exists with this email or phone number"
+      });
+
+    }
+
     // ======================================================
     // VALIDATION
     // ======================================================
