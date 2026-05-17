@@ -1076,6 +1076,42 @@ app.put(
         appointment_time
       } = req.body;
 
+      // ==========================================
+      // APPOINTMENT VALIDATION
+      // ==========================================
+
+      if (
+        !registration_ref ||
+        !appointment_date ||
+        !appointment_time
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Required appointment fields are missing"
+        });
+
+      }
+
+      const selectedDate =
+        new Date(appointment_date);
+
+      const today =
+        new Date();
+
+      today.setHours(0,0,0,0);
+
+      if (selectedDate < today) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Appointment date cannot be in the past"
+        });
+
+      }
+
       const result = await pool.query(
         `
         UPDATE appointments
