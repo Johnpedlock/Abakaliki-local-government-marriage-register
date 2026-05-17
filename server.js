@@ -825,6 +825,29 @@ app.put(
         appointment.reference_number
       );
 
+      // ==========================================
+      // AUDIT LOG
+      // ==========================================
+      await pool.query(
+        `
+        INSERT INTO audit_logs (
+          id,
+          action,
+          appointment_reference,
+          admin_role,
+          details
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          uuidv4(),
+          'APPOINTMENT_APPROVED',
+          appointment.reference_number,
+          'admin',
+          'Appointment approved successfully'
+        ]
+      );
+
       res.json({
         success: true,
         message:
