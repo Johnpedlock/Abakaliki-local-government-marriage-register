@@ -1083,6 +1083,122 @@ app.put(
 
 
 // ======================================================
+// ADMIN DASHBOARD STATS
+// ======================================================
+app.get(
+  "/admin/dashboard/stats",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const registrations =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM registrations
+          `
+        );
+
+      const appointments =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM appointments
+          `
+        );
+
+      const approved =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM appointments
+          WHERE status='approved'
+          `
+        );
+
+      const completed =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM appointments
+          WHERE status='completed'
+          `
+        );
+
+      const rejected =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM appointments
+          WHERE status='rejected'
+          `
+        );
+
+      const rescheduled =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM appointments
+          WHERE status='rescheduled'
+          `
+        );
+
+      const auditLogs =
+        await pool.query(
+          `
+          SELECT COUNT(*) AS total
+          FROM audit_logs
+          `
+        );
+
+      res.json({
+        success: true,
+        stats: {
+          total_registrations:
+            registrations.rows[0].total,
+
+          total_appointments:
+            appointments.rows[0].total,
+
+          approved_appointments:
+            approved.rows[0].total,
+
+          completed_appointments:
+            completed.rows[0].total,
+
+          rejected_appointments:
+            rejected.rows[0].total,
+
+          rescheduled_appointments:
+            rescheduled.rows[0].total,
+
+          total_admin_actions:
+            auditLogs.rows[0].total
+        }
+      });
+
+    } catch (err) {
+
+      console.error(
+        "DASHBOARD STATS ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to load dashboard statistics"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
