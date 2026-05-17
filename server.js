@@ -983,6 +983,83 @@ app.put(
 
 
 // ======================================================
+// RESCHEDULE APPOINTMENT
+// ======================================================
+app.put(
+  "/admin/appointment/:ref/reschedule",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const {
+        appointment_date,
+        appointment_time
+      } = req.body;
+
+      const result = await pool.query(
+        `
+        UPDATE appointments
+        SET
+          appointment_date=$1,
+          appointment_time=$2,
+          status='rescheduled'
+        WHERE reference_number=$3
+        RETURNING *
+        `,
+        [
+          appointment_date,
+          appointment_time,
+          req.params.ref
+        ]
+      );
+
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          success: false,
+          message:
+            "Appointment not found"
+        });
+
+      }
+
+      const appointment =
+        result.rows[0];
+
+      console.log(
+        "APPOINTMENT RESCHEDULED:",
+        appointment.reference_number
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Appointment rescheduled successfully",
+        appointment
+      });
+
+    } catch (err) {
+
+      console.error(
+        "RESCHEDULE APPOINTMENT ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to reschedule appointment"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
