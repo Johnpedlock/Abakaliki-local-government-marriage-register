@@ -1453,7 +1453,38 @@ app.post("/appointment/create", auth, async (req, res) => {
 
     }
 
-    const applicant = registration.rows[0];
+    
+const applicant = registration.rows[0];
+
+      // ==========================================
+      // DUPLICATE APPOINTMENT CHECK
+      // ==========================================
+
+      const existingAppointment =
+        await pool.query(
+          `
+          SELECT *
+          FROM appointments
+          WHERE registration_ref=$1
+          AND status IN (
+            'scheduled',
+            'approved',
+            'rescheduled'
+          )
+          `,
+          [registration_ref]
+        );
+
+      if (existingAppointment.rows.length) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "An active appointment already exists for this registration"
+        });
+
+      }
+
 
     // ==========================================
     // GENERATE APPOINTMENT REFERENCE
