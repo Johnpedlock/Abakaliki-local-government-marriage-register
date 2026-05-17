@@ -1199,6 +1199,79 @@ app.get(
 
 
 // ======================================================
+// PUBLIC TRACKING
+// ======================================================
+app.get(
+  "/track/:reference",
+  async (req, res) => {
+
+    try {
+
+      const registration =
+        await pool.query(
+          `
+          SELECT *
+          FROM registrations
+          WHERE reference_number=$1
+          `,
+          [req.params.reference]
+        );
+
+      if (!registration.rows.length) {
+
+        return res.status(404).json({
+          success: false,
+          message:
+            "Registration not found"
+        });
+
+      }
+
+      const appointment =
+        await pool.query(
+          `
+          SELECT *
+          FROM appointments
+          WHERE registration_ref=$1
+          ORDER BY created_at DESC
+          LIMIT 1
+          `,
+          [req.params.reference]
+        );
+
+      res.json({
+        success: true,
+
+        registration:
+          registration.rows[0],
+
+        appointment:
+          appointment.rows.length
+            ? appointment.rows[0]
+            : null
+      });
+
+    } catch (err) {
+
+      console.error(
+        "TRACKING ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Tracking lookup failed"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
