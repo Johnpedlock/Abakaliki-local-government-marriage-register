@@ -918,6 +918,71 @@ app.put(
 
 
 // ======================================================
+// REJECT APPOINTMENT
+// ======================================================
+app.put(
+  "/admin/appointment/:ref/reject",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const result = await pool.query(
+        `
+        UPDATE appointments
+        SET status='rejected'
+        WHERE reference_number=$1
+        RETURNING *
+        `,
+        [req.params.ref]
+      );
+
+      if (!result.rows.length) {
+
+        return res.status(404).json({
+          success: false,
+          message:
+            "Appointment not found"
+        });
+
+      }
+
+      const appointment =
+        result.rows[0];
+
+      console.log(
+        "APPOINTMENT REJECTED:",
+        appointment.reference_number
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Appointment rejected successfully",
+        appointment
+      });
+
+    } catch (err) {
+
+      console.error(
+        "REJECT APPOINTMENT ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to reject appointment"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // QR GENERATION
 // ======================================================
 app.get("/qr/:ref", async (req, res) => {
