@@ -16,6 +16,40 @@ const transporter = require("./mailer");
 
 const app = express();
 
+// ==========================================
+// RATE LIMITERS
+// ==========================================
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    message:
+      "Too many login attempts. Please try again later."
+  }
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: {
+    success: false,
+    message:
+      "Too many registration attempts. Please try again later."
+  }
+});
+
+const trackingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: {
+    success: false,
+    message:
+      "Too many tracking requests. Please try again later."
+  }
+});
+
 // ======================================================
 // TRUST PROXY (RENDER)
 // ======================================================
@@ -350,7 +384,7 @@ app.get("/health", async (req, res) => {
 // ======================================================
 // REGISTER
 // ======================================================
-app.post("/register", async (req, res) => {
+app.post("/register", registerLimiter, async (req, res) => {
 
   try {
 
@@ -748,7 +782,7 @@ app.get("/verify/:ref", async (req, res) => {
 // ======================================================
 // ADMIN LOGIN
 // ======================================================
-app.post("/admin/login", async (req, res) => {
+app.post("/admin/login", loginLimiter, async (req, res) => {
 
   try {
 
@@ -1320,6 +1354,7 @@ app.get(
 // ======================================================
 app.get(
   "/track/:reference",
+  trackingLimiter,
   async (req, res) => {
 
     try {
