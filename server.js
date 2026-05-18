@@ -17,6 +17,26 @@ const transporter = require("./mailer");
 const app = express();
 
 // ==========================================
+// CORS CONFIGURATION
+// ==========================================
+
+app.use(
+  cors({
+    origin: [
+      "https://abakaliki-marriage.vercel.app",
+      "http://localhost:3000"
+    ],
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE"
+    ],
+    credentials: true
+  })
+);
+
+// ==========================================
 // RATE LIMITERS
 // ==========================================
 
