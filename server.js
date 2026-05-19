@@ -1603,8 +1603,10 @@ app.get(
           rescheduled_appointments:
             rescheduled.rows[0].total,
 
-          total_admin_actions:
-            auditLogs.rows[0].total
+          
+audit_logs:
+              auditLogs.rows[0].total
+
         }
       });
 
