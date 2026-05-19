@@ -22,10 +22,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "https://abakaliki-marriage.vercel.app",
-      "http://localhost:3000"
-    ],
+    origin: true,
     methods: [
       "GET",
       "POST",
@@ -80,11 +77,7 @@ app.set("trust proxy", 1);
 // ======================================================
 app.use(helmet());
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+
 
 // ======================================================
 // RATE LIMITER
