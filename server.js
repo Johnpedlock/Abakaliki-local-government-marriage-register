@@ -1513,7 +1513,97 @@ app.put(
 );
 
 
+
+// ======================================================
+// DELETE REGISTRATION
+// ======================================================
+
+app.delete(
+  "/admin/registration/:ref/delete",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const { ref } = req.params;
+
+      await pool.query(
+        `
+        DELETE FROM registrations
+        WHERE reference_number = $1
+        `,
+        [ref]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Registration deleted successfully"
+      });
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to delete registration"
+      });
+
+    }
+
+  }
+);
+
+
+// ======================================================
+// DELETE APPOINTMENT
+// ======================================================
+
+app.delete(
+  "/admin/appointment/:ref/delete",
+  auth,
+  async (req, res) => {
+
+    try {
+
+      const { ref } = req.params;
+
+      await pool.query(
+        `
+        DELETE FROM appointments
+        WHERE reference_number = $1
+        `,
+        [ref]
+      );
+
+      res.json({
+        success: true,
+        message:
+          "Appointment deleted successfully"
+      });
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to delete appointment"
+      });
+
+    }
+
+  }
+);
+
+
+
+// ======================================================
 // ADMIN DASHBOARD STATS
+// ======================================================
 // ======================================================
 app.get(
   "/admin/dashboard/stats",
